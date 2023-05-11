@@ -40,3 +40,4 @@ yarn-error.log*
 *.mp3
 
 .tmp/
+.vercel

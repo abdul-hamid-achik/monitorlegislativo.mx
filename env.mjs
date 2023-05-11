@@ -11,10 +11,18 @@ export const env = createEnv({
    */
   clientPrefix: "PUBLIC_",
   server: {
-    DATABASE_URL: z.string().url(),
     OPENAI_API_KEY: z.string().min(1),
-    PINECONE_API_KEY: z.string().min(1),
-    PINECONE_ENVIRONMENT: z.string().min(1),
+    KV_URL: z.string().url().min(1),
+    KV_REST_API_URL: z.string().url().min(1),
+    KV_REST_API_TOKEN: z.string().min(1),
+    KV_REST_API_READ_ONLY_TOKEN: z.string().min(1),
+    POSTGRES_URL: z.string().url().min(1),
+    POSTGRES_PRISMA_URL: z.string().url().min(1),
+    POSTGRES_URL_NON_POOLING: z.string().url().min(1),
+    POSTGRES_USER: z.string().min(1),
+    POSTGRES_HOST: z.string().min(1),
+    POSTGRES_PASSWORD: z.string().min(1),
+    POSTGRES_DATABASE: z.string().min(1),
   },
   client: {
     // PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),

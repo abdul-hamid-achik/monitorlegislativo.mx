@@ -6,13 +6,14 @@ export async function getVideo(videoId: string) {
     where: {
       id: videoId,
     },
-    include: {
-      transcription: {
-        include: {
-          segments: true,
-        }
-      }
-    }
+    // include: {
+    //   transcription: {
+    //     include: {
+    //       segments: true,
+    //     }
+    //   }
+    // },
+
   })
 
   return video

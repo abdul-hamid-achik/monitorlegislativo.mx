@@ -13,6 +13,7 @@ datasource db {
 model Video {
   id            String         @id @unique @map("id")
   isSenate      Boolean        @default(false) @map("is_senate")
+  happenedAt    DateTime       @map("happened_at")
   transcription Transcription?
 
   @@map("videos")
@@ -28,13 +29,15 @@ model Transcription {
 }
 
 model TranscriptionSegment {
-  id              Int           @id @default(autoincrement()) @map("id")
-  transcriptionId String        @map("transcription_id")
-  startAt         String        @map("start_at")
-  endAt           String        @map("end_at")
-  content         String        @db.Text
-  transcription   Transcription @relation(fields: [transcriptionId], references: [videoId])
+  id              String                 @id @unique @map("id")
+  transcriptionId String                 @map("transcription_id")
+  startAt         String                 @map("start_at")
+  endAt           String                 @map("end_at")
+  content         String                 @db.Text
+  transcription   Transcription          @relation(fields: [transcriptionId], references: [videoId])
+  vector          Unsupported("vector")?
 
+  @@unique([transcriptionId, startAt, endAt, content])
   @@index([transcriptionId])
   @@map("transcription_segments")
 }

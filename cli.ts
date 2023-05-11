@@ -15,7 +15,6 @@ async function main(videoId: string, happenedAt: string, legislativeBranch: 'con
   console.log(`📝 Transcription: ${transcription?.length}`)
   console.log(`📝 Resume: ${resume?.length}`)
 
-  await functions.persist(videoId, transcription, resume!)
   // } catch (error) {
   //   console.error(`❌ Error: ${error}`);
   // }

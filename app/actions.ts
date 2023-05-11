@@ -4,13 +4,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function getVideos() {
   const videos = await prisma.video.findMany({
-    include: {
-      transcription: {
-        include: {
-          segments: true,
-        }
-      },
-    },
+    orderBy: {
+      happenedAt: 'desc',
+    }
   });
 
   return videos;

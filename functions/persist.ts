@@ -1,15 +1,21 @@
 import { prisma } from '@/lib/prisma';
 import { Transcription } from '@prisma/client';
+import * as uuid from 'uuid';
 import parse from './parse';
 
-async function persist(videoId: string, transcriptionText: string, resumeText: string): Promise<Transcription | null> {
+async function persist(videoId: string, transcriptionText: string, resumeText: string, happenedAt: string, isSenate: boolean): Promise<Transcription | null> {
   try {
     console.log(`📝 Persisting transcription for video ${videoId}...`);
     await prisma.video.upsert({
       where: { id: videoId },
-      update: {},
+      update: {
+        happenedAt,
+        isSenate
+      },
       create: {
         id: videoId,
+        happenedAt,
+        isSenate
       },
     });
 
@@ -38,6 +44,7 @@ async function persist(videoId: string, transcriptionText: string, resumeText: s
     for (const segment of segments) {
       const { startAt, endAt, content } = segment;
       transcriptionSegments.push({
+        id: uuid.v4(),
         startAt,
         endAt,
         content,

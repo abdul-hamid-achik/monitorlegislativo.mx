@@ -41,6 +41,8 @@ async function process(videoUrl: string, happenedAt: string, legislativeBranch: 
   // try {
   let duration;
 
+  const videoId = videoUrl.split('v=')[1];
+
   if (!outputPath || (outputPath && !fs.existsSync(outputPath))) {
     console.log('🎬 Downloading audio from YouTube...');
     [outputPath, duration] = await functions.download(videoUrl);
@@ -72,15 +74,19 @@ async function process(videoUrl: string, happenedAt: string, legislativeBranch: 
   }
 
 
+  await functions.persist(videoId, transcription, resume, happenedAt, legislativeBranch === 'senate')
+
   if (fs.existsSync(resumePath)) {
     console.log('📝 Resume already exists, skipping resume...');
     resume = fs.readFileSync(resumePath, 'utf-8');
   } else {
     console.log(`📝 Generating resume for transcription of the size of ${transcription.length}`);
-    resume = await functions.resume(transcription.replace(/WEBVTT\n/g, '').replace(/\n{3,}/g, '\n\n'), videoUrl, happenedAt, legislativeBranch);
+    resume = await functions.summarize(videoId);
     fs.writeFileSync(resumePath, resume);
   }
 
+  await functions.persist(videoId, transcription, resume, happenedAt, legislativeBranch === 'senate')
+  
   console.log('✅ Done!');
   output = {
     transcription,

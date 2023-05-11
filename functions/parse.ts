@@ -6,11 +6,12 @@ interface ParsedSegment {
   content: string;
 }
 
-
 function parse(text: string): ParsedSegment[] {
-  return text.replace(/WEBVTT\n\n/gm, "")
+  const segmentMap = new Map<string, ParsedSegment>();
+
+  text.replace(/WEBVTT\n\n/gm, "")
     .split("\n\n")
-    .map((paragraph) => {
+    .forEach((paragraph) => {
       const regex = /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\n(.+)/;
       const match = paragraph.match(regex);
 
@@ -24,14 +25,19 @@ function parse(text: string): ParsedSegment[] {
         const endDateTime = DateTime.fromFormat(endAt, "hh:mm:ss.SSS");
 
         if (startDateTime.isValid && endDateTime.isValid) {
-          return {
+          const segment = {
             startAt,
             endAt,
             content: text,
           }
+
+          const key = `${startAt}-${endAt}-${text}`;
+          segmentMap.set(key, segment);
         }
       }
-    }).filter(Boolean) as ParsedSegment[];
+    });
+
+  return Array.from(segmentMap.values());
 }
 
 export default parse;

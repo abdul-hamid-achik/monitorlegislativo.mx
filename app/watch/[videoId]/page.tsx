@@ -9,6 +9,6 @@ export default async function WatchPage() {
   return <>
     <h1>Watch page</h1>
     <p>{videoId}</p>
-    <p>{video?.transcription!.resume}</p>
+    <p>{video?.id}</p>
   </>
 }

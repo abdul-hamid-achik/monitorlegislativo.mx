@@ -34,3 +34,9 @@ yarn-error.log*
 
 .contentlayer
 .env
+
+*.tsbuildinfo
+
+*.mp3
+
+.tmp/

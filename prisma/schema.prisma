@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Video {
+  id            String         @id @unique @map("id")
+  isSenate      Boolean        @default(false) @map("is_senate")
+  transcription Transcription?
+
+  @@map("videos")
+}
+
+model Transcription {
+  videoId  String                 @id @unique @map("video_id")
+  segments TranscriptionSegment[]
+  resume   String                 @db.LongText
+  video    Video                  @relation(fields: [videoId], references: [id])
+
+  @@map("transcriptions")
+}
+
+model TranscriptionSegment {
+  id              Int           @id @default(autoincrement()) @map("id")
+  transcriptionId String        @map("transcription_id")
+  startAt         String        @map("start_at")
+  endAt           String        @map("end_at")
+  content         String        @db.Text
+  transcription   Transcription @relation(fields: [transcriptionId], references: [videoId])
+
+  @@index([transcriptionId])
+  @@map("transcription_segments")
+}

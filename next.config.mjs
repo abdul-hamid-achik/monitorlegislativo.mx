@@ -2,7 +2,15 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    appDir: true,
+    serverActions: true,
+  },
+  webpack(config) {
+    config.experiments = {
+      asyncWebAssembly: true,
+      layers: true,
+    }
+
+    return config
   },
 }
 

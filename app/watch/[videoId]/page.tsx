@@ -1,5 +1,6 @@
 import Player from '@/components/player';
 import { getBaseUrl } from "@/lib/utils";
+import { youtube } from '@/lib/youtube';
 // import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 
@@ -11,6 +12,30 @@ async function getVideoStats(videoId: string) {
   })
 
   return await response.json() as { [key: string]: number }
+}
+
+
+async function getCaptions(videoId: string) {
+  const res = await youtube.captions.list({
+    part: ['snippet'],
+    videoId
+  });
+
+  // Find Spanish caption track
+  const spanishCaption = res.data!.items!.find(item => item.snippet!.language === 'es');
+  if (!spanishCaption) {
+    console.error('Spanish caption not found');
+    return;
+  }
+
+  const captionRes = await youtube.captions.download({
+    id: spanishCaption.id as string,
+    tfmt: 'srt',
+  });
+
+  const captions = captionRes.data as string;
+
+  return captions
 }
 
 // function WordFrequencyChart({ data, title }: { data: any, title: string }) {
@@ -68,7 +93,7 @@ export default async function WatchPage({ params }: { params: { videoId: string 
       tracks: [{
         kind: 'captions',
         label: 'español',
-        src: `${getBaseUrl()}/api/transcription/${videoId}`,
+        src: `${getBaseUrl()}/api/watch/${videoId}/captions`,
         default: true,
       }],
       sources: [{

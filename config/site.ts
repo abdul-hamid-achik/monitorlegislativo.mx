@@ -6,8 +6,21 @@ export const siteConfig = {
     "Un lugar para observar al congreso y al senado de la republica mexicana",
   mainNav: [
     {
-      title: "Home",
+      title: "Inicio",
       href: "/",
+    },
+    {
+      title: "Diputados",
+      href: "/diputados",
+    },
+    {
+      title: "Senadores",
+      href: "/senadores",
+    },
+
+    {
+      title: "Acerca de",
+      href: "/about",
     },
   ],
   links: {

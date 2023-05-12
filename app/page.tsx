@@ -1,11 +1,17 @@
-import Link from "next/link"
-
 import { Icons } from "@/components/icons"
 import { buttonVariants } from "@/components/ui/button"
 import { siteConfig } from "@/config/site"
+import Image from "next/image"
+import Link from "next/link"
 import { getVideos } from "./actions"
 
+const YoutubeThumbnail = ({ videoId }: { videoId: string }) => {
+  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
 
+  return (
+    <Image src={thumbnailUrl} alt="YouTube video thumbnail" width={360} height={360} className="w-full" />
+  );
+}
 export default async function IndexPage() {
   const videos = await getVideos()
 
@@ -13,8 +19,8 @@ export default async function IndexPage() {
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="flex max-w-[980px] flex-col items-start gap-2">
         <h1 className="mb-4 text-3xl font-extrabold leading-tight tracking-tighter sm:text-3xl md:text-5xl lg:text-6xl">
-          Bienvenido al monitor legislativo <br className="hidden sm:inline" />
-          haciendo preguntas o buscando que se dijo.
+          Hola <br className="hidden sm:inline" />
+          bienvenido a este proyecto.
         </h1>
         <p className="max-w-[700px] text-lg text-muted-foreground sm:text-xl">
           Volviendo accesible la información de las sesiones del congreso y el senado.
@@ -44,6 +50,7 @@ export default async function IndexPage() {
                 <Link href={`/watch/${video.id}`}>
                   <h3 className="text-xl font-bold">{video.id}</h3>
                 </Link>
+                <YoutubeThumbnail videoId={video.id} />
                 <p className="">{video.isSenate ? "senado" : "congreso"}</p>
               </div>
             ))}

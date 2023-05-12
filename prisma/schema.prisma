@@ -10,34 +10,42 @@ datasource db {
   shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-model Video {
-  id            String         @id @unique @map("id")
-  isSenate      Boolean        @default(false) @map("is_senate")
-  happenedAt    DateTime       @map("happened_at")
-  transcription Transcription?
+model Subtitle {
+  id      String                 @id @unique @map("id")
+  videoId String                 @map("video_id")
+  startAt String                 @map("start_at")
+  endAt   String                 @map("end_at")
+  content String                 @db.Text
+  vector  Unsupported("vector")?
 
-  @@map("videos")
+  @@unique([videoId, startAt, endAt, content])
+  @@index([videoId])
+  @@map("subtitles")
 }
 
-model Transcription {
-  videoId  String                 @id @unique @map("video_id")
-  segments TranscriptionSegment[]
-  resume   String                 @db.Text()
-  video    Video                  @relation(fields: [videoId], references: [id])
+model Politician {
+  id       Int     @id @unique @default(autoincrement())
+  name     String
+  lastName String  @map("last_name")
+  fraction String
+  phone    String?
+  email    String
+  link     String?
+  role     Role
 
-  @@map("transcriptions")
+  @@unique([name, lastName, fraction, phone, email, link, role])
+  @@index([name, lastName])
+  @@index([name])
+  @@index([lastName])
+  @@index([fraction])
+  @@index([phone])
+  @@index([email])
+  @@index([link])
+  @@index([role])
+  @@map("politicians")
 }
 
-model TranscriptionSegment {
-  id              String                 @id @unique @map("id")
-  transcriptionId String                 @map("transcription_id")
-  startAt         String                 @map("start_at")
-  endAt           String                 @map("end_at")
-  content         String                 @db.Text
-  transcription   Transcription          @relation(fields: [transcriptionId], references: [videoId])
-  vector          Unsupported("vector")?
-
-  @@unique([transcriptionId, startAt, endAt, content])
-  @@index([transcriptionId])
-  @@map("transcription_segments")
+enum Role {
+  DIPUTADO
+  SENADOR
 }

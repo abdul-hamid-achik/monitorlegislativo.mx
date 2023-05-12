@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server';
 import superjson from 'superjson';
 
 export async function GET(_request: Request, { params }: { params: { videoId: string } }) {
-  const segments = await prisma.transcriptionSegment.findMany({
+  const segments = await prisma.subtitle.findMany({
     where: {
-      transcriptionId: params.videoId,
+      videoId: params.videoId,
     },
     orderBy: {
       startAt: 'asc',

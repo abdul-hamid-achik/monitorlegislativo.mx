@@ -1,3 +1,5 @@
+'use client'
+
 import { Duration } from 'luxon';
 import React from 'react';
 import videojs from 'video.js';
@@ -18,11 +20,11 @@ export const VideoJS = (props) => {
 
       const player = playerRef.current = videojs(videoElement, options, () => {
         videojs.log('player is ready');
-        player?.on('timeupdate', () => {
+        props.onTimeUpdate && player?.on('timeupdate', () => {
           requestAnimationFrame(() => {
             const currentTimeInMs = player.currentTime() * 1000;
             const formattedTime = Duration.fromMillis(currentTimeInMs).toFormat('hh:mm:ss.SSS');
-            props.onTimeUpdate(formattedTime);
+            props.onTimeUpdate?.(formattedTime);
           });
         });
 

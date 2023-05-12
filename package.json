@@ -6,12 +6,17 @@
     "email": "abdulachik@icloud.com"
   },
   "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "cli": "tsx cli.ts",
+    "cli": "tsx scripts/cli.ts",
+    "senadores": "tsx scripts/senadores.ts",
+    "diputados": "tsx scripts/diputados.ts",
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "typecheck": "tsc --noEmit",
@@ -23,15 +28,19 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@prisma/client": "^4.14.0",
+    "@radix-ui/react-label": "^2.0.1",
+    "@radix-ui/react-progress": "^1.0.2",
     "@t3-oss/env-core": "^0.3.1",
     "@types/fluent-ffmpeg": "^2.1.21",
     "@types/luxon": "^3.3.0",
     "@vercel/analytics": "^1.0.1",
     "@vercel/kv": "^0.2.0",
     "axios": "^1.4.0",
+    "cheerio": "1.0.0-rc.12",
     "class-variance-authority": "^0.6.0",
     "clsx": "^1.2.1",
     "cmdk": "^0.2.0",
+    "date-fns": "^2.30.0",
     "dotenv": "^16.0.3",
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^118.0.0",

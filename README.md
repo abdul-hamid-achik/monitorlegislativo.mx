@@ -4,6 +4,7 @@
 
 Este proyecto es un sistema de monitorieo de la actividad legislativa en mexico y utiliza AI y Tecnicas comunes de busqueda para visibilizar discusiones en el congreso y el senado
 
+solo se escanean videos de @camaradediputadosmx y @senadomexico
 ## Instalacion
 
 Para instalar asegurate de tener instalado pnpm y nodejs

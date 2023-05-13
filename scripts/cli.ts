@@ -1,7 +1,5 @@
 import * as functions from '@/lib/functions';
-import { DateTime } from 'luxon';
-async function main(videoId: string, happenedAt: string, legislativeBranch: 'congress' | 'senate', outputPath?: string | null): Promise<void> {
-  // try {
+async function main(videoId: string, outputPath?: string | null): Promise<void> {
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   console.log(`🔗 YouTube URL: ${videoUrl}`)
@@ -14,22 +12,11 @@ async function main(videoId: string, happenedAt: string, legislativeBranch: 'con
 
   console.log(`📝 Transcription: ${transcription?.length}`)
   console.log(`📝 Resume: ${resume?.length}`)
-
-  // } catch (error) {
-  //   console.error(`❌ Error: ${error}`);
-  // }
 }
 
 
-// const videoId = 'hAQBuAa8Dxk' || 'v0wqwl5sP9s';
-let [videoId, happenedAt, legislativeBranch, outputPath] = process.argv.slice(2);
-
-happenedAt = DateTime.fromFormat(happenedAt, "dd 'de' MMMM 'del' yyyy", { locale: "es" }).toISO()!
+let [videoId, outputPath] = process.argv.slice(2);
 
 if (outputPath) console.log(`📂 Output path: ${outputPath}`)
-if (!happenedAt) throw Error('Invalid Date, please add a valid date when this session happened')
-else console.log(`Happened At: ${happenedAt}`)
-if (!legislativeBranch) throw Error("please add either congress or senate in order to do the analizis")
-else console.log(`Legislative Branch: ${legislativeBranch}`)
-main(videoId, happenedAt, legislativeBranch as 'senate' | 'congress', outputPath).catch(console.error);
+main(videoId, outputPath).catch(console.error);
 

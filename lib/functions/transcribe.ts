@@ -1,70 +1,78 @@
 import { openai } from '@/lib/ai';
 import fs from 'fs';
-import { Duration } from 'luxon';
-import parse from './parse';
+import { DateTime, Duration } from 'luxon';
+import * as readline from 'readline';
 
-function parseTimestamp(timestamp: string): Duration {
-  const [hours, minutes, seconds] = timestamp.split(':');
+function fixTimestamps(inputFile: string, outputFile: string) {
+  const fileStream = fs.createReadStream(inputFile);
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity
+  });
 
-  const [intHours, intMinutes] = [hours, minutes].map(Number);
-  const intSeconds = parseFloat(seconds);
+  const writeStream = fs.createWriteStream(outputFile);
+  let currentOffset = Duration.fromMillis(0);
+  let lastEnd = Duration.fromMillis(0);
+  const resetThreshold = Duration.fromObject({ seconds: 10 });  // 10 seconds
 
-  return Duration.fromObject({ hours: intHours, minutes: intMinutes, seconds: intSeconds });
-}
+  rl.on('line', (line) => {
+    const match = line.match(/^(\d{2}:\d{2}:\d{2}.\d{3}) --> (\d{2}:\d{2}:\d{2}.\d{3})$/);
+    if (match) {
+      let start = Duration.fromISOTime(match[1]);
+      let end = Duration.fromISOTime(match[2]);
 
-function fixTimestamps(transcription: string): string {
-  const segments = parse(transcription);
-  let fixedTranscription = 'WEBVTT\n\n';
-  let timeOffset = Duration.fromMillis(0);
-  let previousSegmentEnd = Duration.fromMillis(0);
+      // If the start time is within the resetThreshold, update the offset
+      if (start < resetThreshold) {
+        currentOffset = lastEnd;
+      }
 
-  for (const segment of segments) {
-    const startDuration = parseTimestamp(segment.startAt);
-    const endDuration = parseTimestamp(segment.endAt);
+      // Add the offset to start and end
+      const newStart = start.plus(currentOffset);
+      const newEnd = end.plus(currentOffset);
 
-    if (startDuration < previousSegmentEnd) {
-      timeOffset = timeOffset.plus(previousSegmentEnd);
+      // Update lastEnd
+      lastEnd = newEnd;
+
+      writeStream.write(`${newStart.toFormat('hh:mm:ss.SSS')} --> ${newEnd.toFormat('hh:mm:ss.SSS')}\n`);
+    } else {
+      // Write the line as is
+      writeStream.write(line + '\n');
     }
+  });
 
-    previousSegmentEnd = endDuration;
-
-
-    const start = startDuration.plus(timeOffset).toFormat("hh:mm:ss.SSS");
-    const end = endDuration.plus(timeOffset).toFormat("hh:mm:ss.SSS");
-
-    fixedTranscription += `${start} --> ${end}\n${segment.content}\n\n`;
-  }
-
-  return fixedTranscription;
+  rl.on('close', () => {
+    writeStream.close();
+  });
 }
+
 
 async function transcribe(path: string): Promise<string> {
-  let result
-  try {
+  console.log(`🔈 Sending audio from ${path} to Whisper ASR API for transcription...`);
 
-    console.log(`🔈 Sending audio from ${path} to Whisper ASR API for transcription...`);
-
-    let transcription = ''
-    let subtitles = `${path}/subtitles.vtt`
+  let transcription = 'WEBVTT\n\n';
+  let subtitles = `${path}/subtitles.vtt`;
+  if (fs.existsSync(subtitles)) {
+    console.log('📝 Subtitles already exist, skipping transcription');
+    transcription = fs.readFileSync(subtitles, 'utf-8');
+  } else {
     console.log('📝 Transcribing audio...');
 
-    for (const filename of fs.readdirSync(path)) {
+    const files = fs.readdirSync(path).sort();
+    for (const filename of files) {
       console.log(`🔈 Transcribing file: ${filename}`);
 
-      result = await openai.createTranscription(
+      const result = await openai.createTranscription(
         fs.createReadStream(`${path}/${filename}`) as unknown as File,
         'whisper-1',
         '',
         'vtt',
-        0.3,
+        0.2,
         'es',
       );
 
-      transcription += result.data as unknown as string;
-    }
+      let fileTranscription = (result.data as unknown as string).replace(/WEBVTT\n\n/, '');
 
-    if (fs.existsSync(subtitles)) {
-      fs.unlinkSync(subtitles);
+      transcription += fileTranscription;
     }
 
     if (transcription.length === 0) {
@@ -72,12 +80,14 @@ async function transcribe(path: string): Promise<string> {
       return '';
     }
 
-    fs.writeFileSync(subtitles, fixTimestamps(transcription));
-    return transcription;
-  } catch (error: any) {
-    console.error(`❌ Error transcribing audio: ${error?.response?.data?.error?.message || error}`);
-    return '';
+    // Write raw transcription to file
+    fs.writeFileSync(subtitles, transcription);
   }
+
+  // Fix the timestamps in the transcription
+  fixTimestamps(subtitles, `${subtitles}.${DateTime.now().toMillis()}`);
+
+  return transcription;
 }
 
 export default transcribe;

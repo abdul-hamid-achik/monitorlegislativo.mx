@@ -24,6 +24,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,mdx}\" --cache",
     "migrate": "pnpm dlx prisma db push",
     "background": "pnpm dlx inngest-cli@latest dev",
+    "test": "jest",
     "postinstall": "pnpm dlx prisma generate"
   },
   "dependencies": {
@@ -75,6 +76,9 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
+    "@jest/globals": "^29.5.0",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^14.0.0",
     "@types/node": "^17.0.12",
     "@types/react": "^18.0.22",
     "@types/react-dom": "^18.0.7",
@@ -87,6 +91,8 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-react": "^7.31.11",
     "eslint-plugin-tailwindcss": "^3.8.0",
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
     "postcss": "^8.4.21",
     "prettier": "^2.7.1",
     "tailwindcss": "^3.3.1",

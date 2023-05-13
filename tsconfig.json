@@ -36,8 +36,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "env.mjs"
-, "components/player.jsx"  ],
+    "env.mjs",
+    "components/player.jsx"
+  ],
   "exclude": [
     "node_modules"
   ]

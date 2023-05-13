@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContai
 
 function WordFrequencyChart({ data, title }: { data: any, title: string }) {
   'use client'
+
   return (
     <ResponsiveContainer width="100%" height="300" >
       <LineChart data={data} title={title}>
@@ -21,6 +22,7 @@ function WordFrequencyChart({ data, title }: { data: any, title: string }) {
 
 function WordCountChart({ data, title }: { data: any, title: string }) {
   'use client'
+
   return (
     <BarChart width={600} height={300} data={data} title={title}>
       <XAxis dataKey="word" />
@@ -32,10 +34,12 @@ function WordCountChart({ data, title }: { data: any, title: string }) {
   );
 }
 
-export default function Stats({ data: { top10Words, wordFrequencyOverTime } }: { data: { [key: string]: number; } }) {
-  return <>
+export default function Stats({ data }: { data: { [key: string]: number; } }) {
+  const { top10Words, wordFrequencyOverTime } = data
+
+  return <div className="space-evenly flex flex-row">
     <WordCountChart data={top10Words} title="Palabras mas populares" />
 
     <WordFrequencyChart data={wordFrequencyOverTime} title="Frecuencia de palabras" />
-  </>
+  </div>
 }

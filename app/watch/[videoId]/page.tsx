@@ -1,43 +1,23 @@
 import Player from '@/components/player';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { inngest } from '@/lib/inngest';
+import { prisma } from '@/lib/prisma';
 import { getBaseUrl } from "@/lib/utils";
-import { youtube } from '@/lib/youtube';
 import Commments from './comments';
 import Stats from './stats';
 
 async function getVideoStats(videoId: string) {
-  const response = await fetch(`${getBaseUrl()}/api/stats/${videoId}`, {
+  const response = await fetch(`${getBaseUrl()}/api/watch/${videoId}/stats`, {
     headers: {
       'Content-Type': 'application/json',
     }
   })
 
-  return await response.json() as { [key: string]: number }
+  return await response.json() as { [key: string]: any }
 }
 
 
-async function getCaptions(videoId: string) {
-  const res = await youtube.captions.list({
-    part: ['snippet'],
-    videoId
-  });
-
-  // Find Spanish caption track
-  const spanishCaption = res.data!.items!.find(item => item.snippet!.language === 'es');
-  if (!spanishCaption) {
-    console.error('Spanish caption not found');
-    return;
-  }
-
-  const captionRes = await youtube.captions.download({
-    id: spanishCaption.id as string,
-    tfmt: 'srt',
-  });
-
-  const captions = captionRes.data as string;
-
-  return captions
-}
 
 export default async function WatchPage({ params }: { params: { videoId: string } }) {
   const { videoId } = params
@@ -55,11 +35,25 @@ export default async function WatchPage({ params }: { params: { videoId: string 
     })
   }
 
-  const data = await getVideoStats(videoId);
+  const subtitlesCount = await prisma.subtitle.count({
+    where: {
+      videoId
+    }
+  })
+
+  const noSubtitles = subtitlesCount === 0
+
+  const { stats: data } = await getVideoStats(videoId);
 
   return <main className="container grid items-center gap-6 pb-8 pt-6 md:py-10" >
     <Stats data={data} />
     <div className="flex flex-row">
+      {noSubtitles && <Alert>
+        <AlertTitle>No se ha procesado esta sesion todavia</AlertTitle>
+        <AlertDescription>
+          <Button onClick={handleTranscribe} className="text-blue-500 hover:underline">Procesar</Button>
+        </AlertDescription>
+      </Alert>}
       <Player options={{
         controls: true,
         tracks: [{

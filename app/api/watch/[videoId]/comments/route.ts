@@ -1,13 +1,40 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma, Subtitle } from "@prisma/client";
+import { Politician, Prisma, Subtitle } from "@prisma/client";
 import { CallbackManager } from "langchain/callbacks";
-import { VectorDBQAChain } from "langchain/chains";
+import { loadSummarizationChain } from "langchain/chains";
 import { ChatOpenAI } from "langchain/chat_models/openai";
+import { Document } from "langchain/document";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-import { HumanChatMessage, SystemChatMessage } from "langchain/schema";
 import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 
 
+function createDocumentFromModel(models: Array<Subtitle | Politician>): Document[] {
+  const documents: Document[] = []
+  for (const model of models) {
+    let metadata: Record<string, any> = model
+    let pageContent = ""
+    if ("name" in model) {
+      pageContent = model.name
+      metadata = {
+        type: "politician",
+        ...model
+      }
+    } else {
+      pageContent = model.content
+      metadata = {
+        type: "subtitle",
+        ...model
+      }
+    }
+
+    documents.push({
+      pageContent,
+      metadata,
+    })
+  }
+
+  return documents
+}
 
 export async function POST(request: Request, { params: { videoId } }: { params: { videoId: string } }) {
   let token: any
@@ -17,7 +44,7 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
   }
   const { writable, readable } = new TransformStream();
 
-  const documents = await prisma.subtitle.findMany({
+  const subtitles = await prisma.subtitle.findMany({
     where: {
       videoId,
     },
@@ -45,7 +72,8 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
 
   const vector = await PrismaVectorStore.withModel<Subtitle>(prisma).create(new OpenAIEmbeddings(), {
     prisma: Prisma,
-    tableName: "Subtitle",
+    // @ts-ignore
+    tableName: "subtitles",
     vectorColumnName: "vector",
     columns: {
       id: PrismaVectorStore.IdColumn,
@@ -53,26 +81,46 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
     },
   });
 
-  await vector.addModels(documents);
+  await vector.addModels(subtitles);
 
 
-  const chain = VectorDBQAChain.fromLLM(model, vector, {
-    k: 1,
-    returnSourceDocuments: true,
+  const chain = loadSummarizationChain(model, {
+    type: "map_reduce",
+    returnIntermediateSteps: true,
+  })
+
+
+  console.log(`${subtitles.length} using ${vector.constructor.name} with ${model.constructor.name}`)
+
+
+  const politicianNamesVector = await PrismaVectorStore.withModel<Politician>(prisma).create(new OpenAIEmbeddings(), {
+    prisma: Prisma,
+    // @ts-ignore
+    tableName: "politicians",
+    vectorColumnName: "vector",
+    columns: {
+      id: PrismaVectorStore.IdColumn,
+      name: PrismaVectorStore.ContentColumn,
+    },
   });
 
+  const politicians = await prisma.politician.findMany();
 
-  await chain.call({
-    messages: [
-      new SystemChatMessage("You are a political pundit of the mexican republic and you are analyzing legislative sessions in spanish."),
-      new HumanChatMessage(query || "Hola, ¿cómo estás?"),
+  await politicianNamesVector.addModels(politicians);
+
+  const response = await chain.call({
+    input_documents: [
+      ...createDocumentFromModel(politicians),
+      ...createDocumentFromModel(subtitles),
     ],
-
-    chat_history: []
   });
+
+
+  console.log(response, "response")
 
   return new Response(readable, {
     headers: {
+      "Content-Type": "application/json",
       "Cache-Control": "no-cache, no-transform",
       Connetion: "keep-alive",
     },

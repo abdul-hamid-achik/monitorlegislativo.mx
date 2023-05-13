@@ -24,14 +24,15 @@ model Subtitle {
 }
 
 model Politician {
-  id       Int     @id @unique @default(autoincrement())
+  id       Int                    @id @unique @default(autoincrement())
   name     String
-  lastName String  @map("last_name")
+  lastName String                 @map("last_name")
   fraction String
   phone    String?
   email    String
   link     String?
   role     Role
+  vector   Unsupported("vector")?
 
   @@unique([name, lastName, fraction, phone, email, link, role])
   @@index([name, lastName])

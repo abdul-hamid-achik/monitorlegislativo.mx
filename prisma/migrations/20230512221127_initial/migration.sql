@@ -25,6 +25,7 @@ CREATE TABLE "politicians" (
     "email" TEXT NOT NULL,
     "link" TEXT,
     "role" "Role" NOT NULL,
+    "vector" vector,
 
     CONSTRAINT "politicians_pkey" PRIMARY KEY ("id")
 );

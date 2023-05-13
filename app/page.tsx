@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { siteConfig } from "@/config/site"
 import { CONGRESS_CHANNEL_ID, SENATE_CHANNEL_ID, youtube } from '@/lib/youtube'
 import { LegislativeBranch } from '@/types/legislative'
-import kv from "@vercel/kv"
+import { kv } from "@vercel/kv"
 import { DateTime } from "luxon"
 import Image from "next/image"
 import Link from "next/link"

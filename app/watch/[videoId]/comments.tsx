@@ -14,7 +14,7 @@ export default function Commments() {
     setResponse("");
     setLoading(true);
 
-    const response = await fetch(`/api/watch/${params?.videoId}`, {
+    const response = await fetch(`/api/watch/${params?.videoId}/comments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

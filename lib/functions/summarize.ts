@@ -17,7 +17,8 @@ async function summarize(videoId: string): Promise<string> {
 
   const vector = await PrismaVectorStore.withModel<Subtitle>(prisma).create(new OpenAIEmbeddings(), {
     prisma: Prisma,
-    tableName: "Subtitle",
+    // @ts-ignore
+    tableName: "subtitles",
     vectorColumnName: "vector",
     columns: {
       id: PrismaVectorStore.IdColumn,

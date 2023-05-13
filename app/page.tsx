@@ -21,7 +21,7 @@ const YoutubeThumbnail = ({ videoId }: { videoId: string }) => {
 
 
 
-export async function getLatestVideos(legislativeBranch: LegislativeBranch) {
+async function getLatestVideos(legislativeBranch: LegislativeBranch) {
   try {
     const channelId = legislativeBranch === 'Senado' ? SENATE_CHANNEL_ID : CONGRESS_CHANNEL_ID;
 

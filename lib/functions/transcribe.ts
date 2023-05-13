@@ -1,6 +1,6 @@
 import { openai } from '@/lib/ai';
 import fs from 'fs';
-import { DateTime, Duration } from 'luxon';
+import { Duration } from 'luxon';
 import * as readline from 'readline';
 
 function fixTimestamps(inputFile: string, outputFile: string) {
@@ -13,7 +13,7 @@ function fixTimestamps(inputFile: string, outputFile: string) {
   const writeStream = fs.createWriteStream(outputFile);
   let currentOffset = Duration.fromMillis(0);
   let lastEnd = Duration.fromMillis(0);
-  const resetThreshold = Duration.fromObject({ seconds: 10 });  // 10 seconds
+  const resetThreshold = Duration.fromObject({ seconds: 10 });
 
   rl.on('line', (line) => {
     const match = line.match(/^(\d{2}:\d{2}:\d{2}.\d{3}) --> (\d{2}:\d{2}:\d{2}.\d{3})$/);
@@ -21,21 +21,17 @@ function fixTimestamps(inputFile: string, outputFile: string) {
       let start = Duration.fromISOTime(match[1]);
       let end = Duration.fromISOTime(match[2]);
 
-      // If the start time is within the resetThreshold, update the offset
       if (start < resetThreshold) {
         currentOffset = lastEnd;
       }
 
-      // Add the offset to start and end
       const newStart = start.plus(currentOffset);
       const newEnd = end.plus(currentOffset);
 
-      // Update lastEnd
       lastEnd = newEnd;
 
       writeStream.write(`${newStart.toFormat('hh:mm:ss.SSS')} --> ${newEnd.toFormat('hh:mm:ss.SSS')}\n`);
     } else {
-      // Write the line as is
       writeStream.write(line + '\n');
     }
   });
@@ -80,12 +76,10 @@ async function transcribe(path: string): Promise<string> {
       return '';
     }
 
-    // Write raw transcription to file
     fs.writeFileSync(subtitles, transcription);
   }
 
-  // Fix the timestamps in the transcription
-  fixTimestamps(subtitles, `${subtitles}.${DateTime.now().toMillis()}`);
+  fixTimestamps(subtitles, subtitles);
 
   return transcription;
 }

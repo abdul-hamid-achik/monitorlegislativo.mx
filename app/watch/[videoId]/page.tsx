@@ -26,7 +26,9 @@ export default async function WatchPage({ params }: { params: { videoId: string 
     console.log(seconds)
   }
 
-  const handleTranscribe = async () => {
+  async function handleTranscribe() {
+    'use server';
+
     await inngest.send({
       name: "app/create-captions",
       data: {
@@ -51,7 +53,9 @@ export default async function WatchPage({ params }: { params: { videoId: string 
       {noSubtitles && <Alert>
         <AlertTitle>No se ha procesado esta sesion todavia</AlertTitle>
         <AlertDescription>
-          <Button onClick={handleTranscribe} className="text-blue-500 hover:underline">Procesar</Button>
+          <p>Procesa la sesion para poder ver los subtitulos</p>
+          {/* @ts-ignore */}
+          <Button formAction={handleTranscribe} className="text-blue-500 hover:underline">Procesar</Button>
         </AlertDescription>
       </Alert>}
       <Player options={{

@@ -3,7 +3,7 @@ import { ImageResponse } from "@vercel/og"
 
 export const runtime = "edge"
 
-export default async function GET(request: Request) {
+export async function GET(request: Request) {
   const image = fetch(new URL("./logo.png", __dirname)).then((res) =>
     res.arrayBuffer()
   )

@@ -15,7 +15,7 @@ export default async function AboutPage() {
     </p>
 
     <p className="leading-7 [&:not(:first-child)]:mt-6">
-      Si quieres saber más de mi, puedes visitar mi <Link className="underline" href="https://abdulhamid.dev">página personal</Link>.
+      Si quieres saber más de mi, puedes visitar mi <Link className="underline" href="https://abdulachik.dev">página personal</Link>.
     </p>
 
     <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">

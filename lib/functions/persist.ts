@@ -18,22 +18,22 @@ async function persist(videoId: string, transcriptionText: string): Promise<{
       }
     });
 
-    const transcriptionSegments: any[] = [];
+    let subtitlesData: any[] = [];
 
     for (const segment of segments) {
       const { startAt, endAt, content } = segment;
-      transcriptionSegments.push({
+      subtitlesData.push({
         id: uuid.v4(),
         startAt,
         endAt,
         content,
-        transcriptionId: videoId,
+        videoId,
       })
     }
 
-    console.log(`📝 Persisting ${transcriptionSegments.length} transcription segments for video ${videoId}...`)
+    console.log(`📝 Persisting ${subtitlesData.length} transcription segments for video ${videoId}...`)
     const subtitles = await prisma.subtitle.createMany({
-      data: transcriptionSegments,
+      data: subtitlesData,
     });
 
     console.log('✅ Transcription persisted!');

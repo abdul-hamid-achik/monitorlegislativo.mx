@@ -22,10 +22,9 @@ async function process(videoUrl: string, outputPath?: string | null): Promise<Re
   }
 
   const transcriptionPath = `${outputPath}/transcription.vtt`;
-  const resumePath = `${outputPath}/resume.txt`;
 
   let transcription = '';
-  let resume = '';
+
 
   if (fs.existsSync(transcriptionPath)) {
     console.log('📝 Transcription already exists, skipping transcription...');
@@ -36,20 +35,9 @@ async function process(videoUrl: string, outputPath?: string | null): Promise<Re
 
   }
 
-  if (fs.existsSync(resumePath)) {
-    console.log('📝 Resume already exists, skipping resume...');
-    resume = fs.readFileSync(resumePath, 'utf-8');
-  } else {
-    console.log(`📝 Generating resume for transcription of the size of ${transcription.length}`);
-    resume = await functions.summarize(videoId);
-    fs.writeFileSync(resumePath, resume);
-  }
-
   output = {
     transcription,
-    resume,
   }
-
 
   console.log('✅ Done!');
 

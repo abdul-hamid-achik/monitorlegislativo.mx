@@ -8,50 +8,46 @@ import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 
 
 async function summarize(videoId: string): Promise<string> {
-  try {
-    const documents = await prisma.subtitle.findMany({
-      where: {
-        videoId,
-      },
-    });
+  // try {
+  const documents = await prisma.subtitle.findMany({
+    where: {
+      videoId,
+    },
+  });
 
-    console.log(documents.length, "documents")
-    const indexName = videoId.toLowerCase() as string
+  const vector = await PrismaVectorStore.withModel<Subtitle>(prisma).create(new OpenAIEmbeddings(), {
+    prisma: Prisma,
+    tableName: "Subtitle",
+    vectorColumnName: "vector",
+    columns: {
+      id: PrismaVectorStore.IdColumn,
+      content: PrismaVectorStore.ContentColumn,
+    },
+  });
 
-
-    const vector = await PrismaVectorStore.withModel<Subtitle>(prisma).create(new OpenAIEmbeddings(), {
-      prisma: Prisma,
-      tableName: "Subtitle",
-      vectorColumnName: "vector",
-      columns: {
-        id: PrismaVectorStore.IdColumn,
-        content: PrismaVectorStore.ContentColumn,
-      },
-    });
-
-    await vector.addModels(documents);
+  await vector.addModels(documents);
 
 
-    const model = new OpenAI({
-      modelName: "gpt-4",
-    });
+  const model = new OpenAI({
+    modelName: "gpt-4",
+  });
 
-    const chain = VectorDBQAChain.fromLLM(model, vector, {
-      k: 1,
-      returnSourceDocuments: true,
-    });
+  const chain = VectorDBQAChain.fromLLM(model, vector, {
+    k: 1,
+    returnSourceDocuments: true,
+  });
 
 
-    const response = await chain.call({
-      query: 'what happened during this legislative session? reply in spanish using maximum 3000 words',
-    });
+  const response = await chain.call({
+    query: 'what happened during this legislative session? reply in spanish using maximum 3000 words',
+  });
 
-    console.log(response, "response")
-    return response.text
-  } catch (error: any) {
-    console.error(`Error: ${error?.response?.data?.error?.message || error?.message || error}`)
-    throw error
-  }
+  console.log(response, "response")
+  return response.text
+  // } catch (error: any) {
+  //   console.error(`Error: ${error?.response?.data?.error?.message || error?.message || error}`)
+  //   throw error
+  // }
 }
 
 

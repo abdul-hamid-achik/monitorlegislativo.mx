@@ -4,6 +4,10 @@ import { Duration } from 'luxon';
 import * as readline from 'readline';
 
 function fixTimestamps(inputFile: string, outputFile: string) {
+  if (inputFile === outputFile) {
+    outputFile = `${outputFile}.tmp`;
+  }
+
   const fileStream = fs.createReadStream(inputFile);
   const rl = readline.createInterface({
     input: fileStream,
@@ -38,12 +42,12 @@ function fixTimestamps(inputFile: string, outputFile: string) {
 
   rl.on('close', () => {
     writeStream.close();
+    fs.renameSync(outputFile, inputFile);
   });
 }
 
 
 async function transcribe(path: string): Promise<string> {
-  console.log(`🔈 Sending audio from ${path} to Whisper ASR API for transcription...`);
 
   let transcription = 'WEBVTT\n\n';
   let subtitles = `${path}/subtitles.vtt`;
@@ -51,7 +55,7 @@ async function transcribe(path: string): Promise<string> {
     console.log('📝 Subtitles already exist, skipping transcription');
     transcription = fs.readFileSync(subtitles, 'utf-8');
   } else {
-    console.log('📝 Transcribing audio...');
+    console.log(`🔈 Sending audio from ${path} to Whisper OpenAI API for transcription...`);
 
     const files = fs.readdirSync(path).sort();
     for (const filename of files) {

@@ -4,8 +4,7 @@ import { ImageResponse } from "@vercel/og"
 export const runtime = "edge"
 
 export default async function GET(request: Request) {
-  // @ts-ignore
-  const image = fetch(new URL("./logo.png", import.meta.url)).then((res) =>
+  const image = fetch(new URL("./logo.png", __dirname)).then((res) =>
     res.arrayBuffer()
   )
   try {

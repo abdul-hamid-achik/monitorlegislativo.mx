@@ -9,7 +9,7 @@ type ResumeOutput = {
 
 
 
-async function process(videoUrl: string, happenedAt: string, legislativeBranch: 'senate' | 'congress', outputPath?: string | null): Promise<ResumeOutput> {
+async function process(videoUrl: string, outputPath?: string | null): Promise<ResumeOutput> {
   let output = {}
 
   const videoId = videoUrl.split('v=')[1];

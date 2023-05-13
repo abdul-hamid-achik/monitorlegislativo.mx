@@ -1,3 +1,5 @@
+import webpack from "webpack"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -18,6 +20,12 @@ const nextConfig = {
       asyncWebAssembly: true,
       layers: true,
     }
+
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        "process.env.FLUENTFFMPEG_COV": false,
+      })
+    )
 
     return config
   },

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 // @ts-ignore
 import { ImageResponse } from "@vercel/og"
 

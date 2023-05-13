@@ -6,7 +6,7 @@ async function main(videoId: string, happenedAt: string, legislativeBranch: 'con
 
   console.log(`🔗 YouTube URL: ${videoUrl}`)
 
-  const { transcription, resume, error } = await functions.process(videoUrl, happenedAt, legislativeBranch, outputPath);
+  const { transcription, resume, error } = await functions.process(videoUrl, outputPath);
 
   if (!transcription || !resume) {
     throw new Error(error)

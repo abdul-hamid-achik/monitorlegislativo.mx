@@ -23,6 +23,7 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,mdx}\" --cache",
     "format:check": "prettier --check \"**/*.{ts,tsx,mdx}\" --cache",
     "migrate": "pnpm dlx prisma db push",
+    "background": "pnpm dlx inngest-cli@latest dev",
     "postinstall": "pnpm dlx prisma generate"
   },
   "dependencies": {
@@ -44,8 +45,10 @@
     "cmdk": "^0.2.0",
     "date-fns": "^2.30.0",
     "dotenv": "^16.0.3",
+    "eventsource-parser": "^1.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^118.0.0",
+    "inngest": "^1.8.4",
     "langchain": "^0.0.73",
     "lucide-react": "0.105.0-alpha.4",
     "luxon": "^3.3.0",
@@ -87,6 +90,7 @@
     "postcss": "^8.4.21",
     "prettier": "^2.7.1",
     "tailwindcss": "^3.3.1",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "webpack": "^5.82.1"
   }
 }

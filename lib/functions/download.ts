@@ -3,7 +3,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import ytdl from 'ytdl-core';
 
-ffmpeg.setFfmpegPath(ffmpegPath as string);
+ffmpeg.setFfmpegPath(process.env.NODE_ENV === 'development' ? "/usr/local/bin/ffmpeg" : ffmpegPath as string);
 
 async function download(videoUrl: string): Promise<void> {
   return new Promise(async (resolve, reject) => {

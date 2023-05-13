@@ -41,8 +41,8 @@ export async function GET(request: Request) {
             }}
           >
             <img
-              src={imageData}
-              alt="Abdul Hamid's Blog Logo"
+              src={imageData as unknown as string}
+              alt="Monitor Legislativo"
               height={256}
               style={{ margin: "0 30px" }}
               width={256}

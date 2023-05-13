@@ -1,11 +1,15 @@
 import { Icons } from "@/components/icons"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { siteConfig } from "@/config/site"
+import { CONGRESS_CHANNEL_ID, SENATE_CHANNEL_ID, youtube } from '@/lib/youtube'
+import { LegislativeBranch } from '@/types/legislative'
 import { DateTime } from "luxon"
 import Image from "next/image"
 import Link from "next/link"
-import { getLatestVideos } from "./actions"
+
 
 const YoutubeThumbnail = ({ videoId }: { videoId: string }) => {
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
@@ -14,19 +18,47 @@ const YoutubeThumbnail = ({ videoId }: { videoId: string }) => {
     <Image src={thumbnailUrl} alt="YouTube video thumbnail" width={360} height={360} className="w-full" />
   );
 }
+
+
+
+export async function getLatestVideos(legislativeBranch: LegislativeBranch) {
+  try {
+    const channelId = legislativeBranch === 'Senado' ? SENATE_CHANNEL_ID : CONGRESS_CHANNEL_ID;
+
+    if (!channelId) {
+      console.error('Channel not found');
+      return;
+    }
+    const res = await youtube.search.list({
+      channelId: channelId,
+      maxResults: 8,
+      order: 'date',
+      part: ['snippet'],
+    });
+
+    const videos = res.data.items || [];
+
+    return videos;
+
+  } catch (error) {
+    console.error(error);
+    return []
+  }
+}
+
 export default async function IndexPage() {
-  const senateVideos = await getLatestVideos("senadomexico")
-  const congressVideos = await getLatestVideos("camaradediputadosmx")
+  const senateVideos = await getLatestVideos("Senado")
+  const congressVideos = await getLatestVideos("Congreso")
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="flex max-w-[980px] flex-col items-start gap-2">
         <h1 className="mb-4 text-3xl font-extrabold leading-tight tracking-tighter sm:text-3xl md:text-5xl lg:text-6xl">
           Hola <br className="hidden sm:inline" />
-          bienvenido a este proyecto.
+          bienvenido a este monitor.
         </h1>
         <p className="max-w-[700px] text-lg text-muted-foreground sm:text-xl">
-          Volviendo accesible la información de las sesiones del congreso y el senado.
+          Aqui puedes pedirle a la inteligencia artificial que te resuma las sesiones del congreso y el senado.
         </p>
       </div>
       <div className="flex gap-4">
@@ -40,51 +72,124 @@ export default async function IndexPage() {
         </Link>
       </div>
 
+      <Tabs defaultValue="all">
+        <TabsList >
+          <TabsTrigger value="all">Todo</TabsTrigger>
+          <TabsTrigger value="congreso">Congreso de la union</TabsTrigger>
+          <TabsTrigger value="senado">Senado de la republica</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all">
+          {congressVideos && (
+            <div className="mt-4 flex flex-col gap-4">
+              <h2 className="text-2xl font-bold">Sesiones del Congreso</h2>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                {congressVideos.map((video) => (
+                  <Link key={video.id?.videoId as string} href={`/watch/${video.id?.videoId}`}>
+                    <Card >
+                      <CardHeader>
+                        <CardTitle>{video.snippet!.title! as string}</CardTitle>
+                        <CardDescription>{video.snippet!.description! as string}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <YoutubeThumbnail videoId={video.id?.videoId as string} />
+                      </CardContent>
 
-      {senateVideos && (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold">Sesiones del senado</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {senateVideos.map((video) => (
-              <div key={video.id?.videoId as string} className="flex flex-col gap-2 rounded-md p-4">
-                <Link href={`/watch/${video.id?.videoId}`}>
-                  <h3 className="text-xl font-bold">{video.snippet!.title! as string}</h3>
-                </Link>
-                <YoutubeThumbnail videoId={video.id?.videoId as string} />
-                <p className="">SENADO</p>
+                      {video.snippet?.publishedAt &&
+                        <CardFooter>
+                          <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
+                        </CardFooter>
+                      }
+                    </Card>
+                  </Link>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+          {senateVideos && (
+            <div className="mt-4 flex flex-col gap-4">
+              <h2 className="text-2xl font-bold">Sesiones del Senado</h2>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                {senateVideos.map((video) => (
+                  <Link key={video.id?.videoId as string} href={`/watch/${video.id?.videoId}`}>
+                    <Card >
+                      <CardHeader>
+                        <CardTitle>{video.snippet!.title! as string}</CardTitle>
+                        <CardDescription>{video.snippet!.description! as string}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <YoutubeThumbnail videoId={video.id?.videoId as string} />
+                      </CardContent>
 
+                      {video.snippet?.publishedAt &&
+                        <CardFooter>
+                          <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
+                        </CardFooter>
+                      }
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="congreso">
+          {congressVideos && (
+            <div className="mt-4 flex flex-col gap-4">
+              <h2 className="text-2xl font-bold">Sesiones del Congreso</h2>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                {congressVideos.map((video) => (
+                  <Link key={video.id?.videoId as string} href={`/watch/${video.id?.videoId}`}>
+                    <Card >
+                      <CardHeader>
+                        <CardTitle>{video.snippet!.title! as string}</CardTitle>
+                        <CardDescription>{video.snippet!.description! as string}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <YoutubeThumbnail videoId={video.id?.videoId as string} />
+                      </CardContent>
 
-      {congressVideos && (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold">Sesiones del Congreso</h2>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-            {congressVideos.map((video) => (
-              <Link key={video.id?.videoId as string} href={`/watch/${video.id?.videoId}`}>
-                <Card >
-                  <CardHeader>
-                    <CardTitle>{video.snippet!.title! as string}</CardTitle>
-                    <CardDescription>{video.snippet!.description! as string}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <YoutubeThumbnail videoId={video.id?.videoId as string} />
-                  </CardContent>
+                      {video.snippet?.publishedAt &&
+                        <CardFooter>
+                          <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
+                        </CardFooter>
+                      }
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
-                  {video.snippet?.publishedAt &&
-                    <CardFooter>
-                      <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
-                    </CardFooter>
-                  }
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+        </TabsContent>
+        <TabsContent value="senado">
+          {senateVideos && (
+            <div className="mt-4 flex flex-col gap-4">
+              <h2 className="text-2xl font-bold">Sesiones del Senado</h2>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                {senateVideos.map((video) => (
+                  <Link key={video.id?.videoId as string} href={`/watch/${video.id?.videoId}`}>
+                    <Card >
+                      <CardHeader>
+                        <CardTitle>{video.snippet!.title! as string}</CardTitle>
+                        <CardDescription>{video.snippet!.description! as string}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <YoutubeThumbnail videoId={video.id?.videoId as string} />
+                      </CardContent>
+
+                      {video.snippet?.publishedAt &&
+                        <CardFooter>
+                          <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
+                        </CardFooter>
+                      }
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </section>
   )
 }

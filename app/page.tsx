@@ -6,10 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { siteConfig } from "@/config/site"
 import { CONGRESS_CHANNEL_ID, SENATE_CHANNEL_ID, youtube } from '@/lib/youtube'
 import { LegislativeBranch } from '@/types/legislative'
+import kv from "@vercel/kv"
 import { DateTime } from "luxon"
 import Image from "next/image"
 import Link from "next/link"
-
 
 const YoutubeThumbnail = ({ videoId }: { videoId: string }) => {
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/0.jpg`;
@@ -29,6 +29,13 @@ export async function getLatestVideos(legislativeBranch: LegislativeBranch) {
       console.error('Channel not found');
       return;
     }
+
+    const cachedContent = await kv.get(`latest-videos-${legislativeBranch}`)
+
+    if (cachedContent) {
+      return cachedContent as Array<any>
+    }
+
     const res = await youtube.search.list({
       channelId: channelId,
       maxResults: 8,
@@ -38,8 +45,12 @@ export async function getLatestVideos(legislativeBranch: LegislativeBranch) {
 
     const videos = res.data.items || [];
 
-    return videos;
+    await kv.set(`latest-videos-${legislativeBranch}`, videos, {
+      ex: 3 * 60 * 60 * 1000, // 3 hours
+      nx: true
+    })
 
+    return videos;
   } catch (error) {
     console.error(error);
     return []

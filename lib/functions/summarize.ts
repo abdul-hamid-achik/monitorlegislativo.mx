@@ -1,6 +1,6 @@
 
 import { prisma } from "@/lib/prisma";
-import { Prisma, TranscriptionSegment } from "@prisma/client";
+import { Prisma, Subtitle } from "@prisma/client";
 import { VectorDBQAChain } from "langchain/chains";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { OpenAI } from "langchain/llms/openai";
@@ -9,9 +9,9 @@ import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 
 async function summarize(videoId: string): Promise<string> {
   try {
-    const documents = await prisma.transcriptionSegment.findMany({
+    const documents = await prisma.subtitle.findMany({
       where: {
-        transcriptionId: videoId,
+        videoId,
       },
     });
 
@@ -19,9 +19,9 @@ async function summarize(videoId: string): Promise<string> {
     const indexName = videoId.toLowerCase() as string
 
 
-    const vector = await PrismaVectorStore.withModel<TranscriptionSegment>(prisma).create(new OpenAIEmbeddings(), {
+    const vector = await PrismaVectorStore.withModel<Subtitle>(prisma).create(new OpenAIEmbeddings(), {
       prisma: Prisma,
-      tableName: "TranscriptionSegment",
+      tableName: "Subtitle",
       vectorColumnName: "vector",
       columns: {
         id: PrismaVectorStore.IdColumn,
@@ -45,10 +45,6 @@ async function summarize(videoId: string): Promise<string> {
     const response = await chain.call({
       query: 'what happened during this legislative session? reply in spanish using maximum 3000 words',
     });
-
-    chain.call({
-
-    })
 
     console.log(response, "response")
     return response.text

@@ -1,24 +1,22 @@
 import { path as ffmpegPath } from "@ffmpeg-installer/ffmpeg";
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
-import { Duration } from 'luxon';
-import os from 'os';
 import ytdl from 'ytdl-core';
 
 ffmpeg.setFfmpegPath(ffmpegPath as string);
 
-async function download(videoUrl: string): Promise<[string, Duration] | []> {
+async function download(videoUrl: string): Promise<void> {
   return new Promise(async (resolve, reject) => {
     try {
       if (ytdl.validateURL(videoUrl)) {
         const videoId = ytdl.getURLVideoID(videoUrl);
-        const outputPath = `${os.tmpdir()}/${videoId}`;
+        const outputPath = `.tmp/${videoId}`;
 
         if (fs.existsSync(outputPath)) {
-          fs.rmSync(`${os.tmpdir()}/${videoId}`, { recursive: true });
+          fs.rmSync(`.tmp/${videoId}`, { recursive: true });
         }
 
-        fs.mkdirSync(`${os.tmpdir()}/${videoId}`);
+        fs.mkdirSync(`.tmp/${videoId}`);
 
         console.log(`📂 Created temporary directory: ${outputPath}`)
 
@@ -33,10 +31,10 @@ async function download(videoUrl: string): Promise<[string, Duration] | []> {
           ffmpeg(audioStream)
             .inputFormat(audioFormat.container)
             .audioCodec('libmp3lame')
-            .audioBitrate(192)
+            // .audioBitrate(128)
             .addOutputOptions([
               '-f segment',
-              '-segment_time 300',
+              '-segment_time 600',
               '-reset_timestamps 1',
             ]).output(`${outputPath}/output_%03d.mp3`)
             .on('start', () => {
@@ -47,13 +45,11 @@ async function download(videoUrl: string): Promise<[string, Duration] | []> {
             })
             .on('end', () => {
               console.log(`\n✅ Audio successfully downloaded and saved as ${outputPath}`);
-              ytdl.getInfo(videoUrl).then(info =>
-                resolve([outputPath, Duration.fromMillis(parseInt(info.formats[0].approxDurationMs!))])
-              )
+              resolve()
             })
             .on('error', (error: Error) => {
               console.error(`❌ Error downloading audio: ${error}`);
-              reject([]);
+              reject();
             })
             .run();
         } else {

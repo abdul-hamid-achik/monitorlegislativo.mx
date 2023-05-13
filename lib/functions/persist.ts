@@ -1,41 +1,20 @@
 import { prisma } from '@/lib/prisma';
-import { Transcription } from '@prisma/client';
+import { Subtitle } from '@prisma/client';
 import * as uuid from 'uuid';
 import parse from './parse';
 
-async function persist(videoId: string, transcriptionText: string, resumeText: string, happenedAt: string, isSenate: boolean): Promise<Transcription | null> {
+async function persist(videoId: string, transcriptionText: string): Promise<{
+  id: string;
+  subtitles: Subtitle[];
+} | null> {
   try {
-    console.log(`📝 Persisting transcription for video ${videoId}...`);
-    await prisma.video.upsert({
-      where: { id: videoId },
-      update: {
-        happenedAt,
-        isSenate
-      },
-      create: {
-        id: videoId,
-        happenedAt,
-        isSenate
-      },
-    });
-
-    const transcription = await prisma.transcription.upsert({
-      where: { videoId },
-      update: {
-        resume: resumeText,
-      },
-      create: {
-        videoId,
-        resume: resumeText,
-      },
-    });
 
     console.log(`📝 Persisting transcription segments for video ${videoId}...`);
     const segments = parse(transcriptionText)
 
-    await prisma.transcriptionSegment.deleteMany({
+    await prisma.subtitle.deleteMany({
       where: {
-        transcriptionId: videoId,
+        videoId,
       }
     });
 
@@ -53,14 +32,17 @@ async function persist(videoId: string, transcriptionText: string, resumeText: s
     }
 
     console.log(`📝 Persisting ${transcriptionSegments.length} transcription segments for video ${videoId}...`)
-    await prisma.transcriptionSegment.createMany({
+    const subtitles = await prisma.subtitle.createMany({
       data: transcriptionSegments,
     });
 
     console.log('✅ Transcription persisted!');
 
 
-    return transcription;
+    return {
+      id: videoId,
+      subtitles: subtitles as unknown as Subtitle[],
+    };
   } catch (error) {
     console.error(`❌ Error: ${error}`);
     return null;

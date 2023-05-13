@@ -1,4 +1,4 @@
-import * as functions from '@/functions';
+import * as functions from '@/lib/functions';
 import { DateTime } from 'luxon';
 async function main(videoId: string, happenedAt: string, legislativeBranch: 'congress' | 'senate', outputPath?: string | null): Promise<void> {
   // try {

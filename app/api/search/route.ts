@@ -2,8 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { youtube } from "@/lib/youtube";
 import { kv } from "@vercel/kv";
 import superjson from "superjson";
-export async function GET(_request: Request, { params }: { params: { q: string } }) {
-  const { q } = params;
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get('q') || '';
 
   let videoIds: string[] | null = await kv.get(`search-cache-${q}`);
 

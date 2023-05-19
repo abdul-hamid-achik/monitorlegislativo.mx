@@ -1,128 +1,108 @@
-import { prisma } from "@/lib/prisma";
+import { prisma as db } from "@/lib/prisma";
 import { Politician, Prisma, Subtitle } from "@prisma/client";
 import { CallbackManager } from "langchain/callbacks";
-import { loadSummarizationChain } from "langchain/chains";
+import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { ChatOpenAI } from "langchain/chat_models/openai";
-import { Document } from "langchain/document";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 
-
-function createDocumentFromModel(models: Array<Subtitle | Politician>): Document[] {
-  const documents: Document[] = []
-  for (const model of models) {
-    let metadata: Record<string, any> = model
-    let pageContent = ""
-    if ("name" in model) {
-      pageContent = model.name
-      metadata = {
-        type: "politician",
-        ...model
-      }
-    } else {
-      pageContent = model.content
-      metadata = {
-        type: "subtitle",
-        ...model
-      }
-    }
-
-    documents.push({
-      pageContent,
-      metadata,
-    })
-  }
-
-  return documents
-}
+const QA_PROMPT = `
+  You are a helpful mexican political analyst that reads the transcripts of the sessions and answers questions about them.
+  you have an excellent mexican spanish, you can be sarcastic and slightly funny but serious and trustworthy nonetheless.
+  You will first consider the user question in order to formulate your response.
+`
 
 export async function POST(request: Request, { params: { videoId } }: { params: { videoId: string } }) {
-  let token: any
-
-  const { query } = await request.json() as {
-    query: string
+  const { question } = await request.json() as {
+    question: string
   }
   const { writable, readable } = new TransformStream();
 
-  const subtitles = await prisma.subtitle.findMany({
+  const subtitles = await db.subtitle.findMany({
     where: {
       videoId,
     },
   });
 
-  const model = new ChatOpenAI({
-    streaming: true,
-    temperature: 0.9,
-    callbackManager: CallbackManager.fromHandlers({
-      handleLLMNewToken(t) {
-        console.log(t)
-        token = t // help me make this stremeable
-        writable.getWriter().write(JSON.stringify(t));
 
-      },
-      handleLLMEnd(done) {
-        console.log(done)
-        writable.getWriter().write(null);
-
-      }
-    })
-  })
+  const writer = writable.getWriter()
+  const encoder = new TextEncoder();
 
 
-
-  const vector = await PrismaVectorStore.withModel<Subtitle>(prisma).create(new OpenAIEmbeddings(), {
+  const subtitlesVector = PrismaVectorStore.withModel<Subtitle>(db).create(
+    new OpenAIEmbeddings({
+      modelName: "text-embedding-ada-002"
+    }), {
     prisma: Prisma,
-    // @ts-ignore
-    tableName: "subtitles",
+    tableName: "subtitles" as "Subtitle",
     vectorColumnName: "vector",
     columns: {
       id: PrismaVectorStore.IdColumn,
       content: PrismaVectorStore.ContentColumn,
     },
-  });
-
-  await vector.addModels(subtitles);
-
-
-  const chain = loadSummarizationChain(model, {
-    type: "map_reduce",
-    returnIntermediateSteps: true,
   })
 
-
-  console.log(`${subtitles.length} using ${vector.constructor.name} with ${model.constructor.name}`)
-
-
-  const politicianNamesVector = await PrismaVectorStore.withModel<Politician>(prisma).create(new OpenAIEmbeddings(), {
+  const politicsVector = PrismaVectorStore.withModel<Politician>(db).create(
+    new OpenAIEmbeddings({
+      modelName: "text-embedding-ada-002"
+    }), {
     prisma: Prisma,
-    // @ts-ignore
-    tableName: "politicians",
+    tableName: "politicians" as "Politician",
     vectorColumnName: "vector",
     columns: {
       id: PrismaVectorStore.IdColumn,
-      name: PrismaVectorStore.ContentColumn,
+      content: PrismaVectorStore.ContentColumn,
     },
+  })
+
+  const callbacks = CallbackManager.fromHandlers({
+    handleLLMNewToken: async (token) => {
+      await writer.ready
+      await writer.write(encoder.encode(`${token}`));
+
+    },
+    handleLLMEnd: async () => {
+      await writer.ready
+      await writer.close();
+    },
+    handleLLMError: async (error) => {
+      console.error(error)
+      await writer.ready
+      await writer.abort(1);
+    }
+  })
+
+  const vectors = [
+    subtitlesVector.asRetriever(),
+    politicsVector.asRetriever(),
+  ]
+
+  const model = new ChatOpenAI({
+    modelName: "gpt-4",
+    streaming: true,
+    callbacks
+  })
+
+  const chain = ConversationalRetrievalQAChain.fromLLM(model, subtitlesVector.asRetriever(), {
+    returnSourceDocuments: true,
+    verbose: true,
+  })
+
+
+  chain.call({
+    question,
+    chat_history: [],
+  }).then(response => {
+    console.log(response.text)
+  }).catch(error => {
+    console.error(error)
   });
-
-  const politicians = await prisma.politician.findMany();
-
-  await politicianNamesVector.addModels(politicians);
-
-  const response = await chain.call({
-    input_documents: [
-      ...createDocumentFromModel(politicians),
-      ...createDocumentFromModel(subtitles),
-    ],
-  });
-
-
-  console.log(response, "response")
 
   return new Response(readable, {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      Connetion: "keep-alive",
+      "Connection": "keep-alive",
     },
   })
 }

@@ -46,7 +46,7 @@ async function getLatestVideos(legislativeBranch: LegislativeBranch) {
     const videos = res.data.items || [];
 
     await kv.set(`latest-videos-${legislativeBranch}`, videos, {
-      ex: 3 * 60 * 60 * 1000, // 3 hours
+      ex: 3 * 60 * 60 * 1000, // this is so much time because we don't want to hit the youtube api limit
       nx: true
     })
 
@@ -65,11 +65,11 @@ export default async function IndexPage() {
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="flex max-w-[980px] flex-col items-start gap-2">
         <h1 className="mb-4 text-3xl font-extrabold leading-tight tracking-tighter sm:text-3xl md:text-5xl lg:text-6xl">
-          Hola <br className="hidden sm:inline" />
-          bienvenido a este monitor.
+          Bienvenido <br className="hidden sm:inline" />
+          mi monitor del poder legislativo.
         </h1>
         <p className="max-w-[700px] text-lg text-muted-foreground sm:text-xl">
-          Aqui puedes pedirle a la inteligencia artificial que te resuma las sesiones del congreso y el senado.
+          Aqui puedes pedirle a la inteligencia artificial que te resuma o explique los videos de youtube del congreso y el senado.
         </p>
       </div>
       <div className="flex gap-4">
@@ -107,7 +107,8 @@ export default async function IndexPage() {
 
                       {video.snippet?.publishedAt &&
                         <CardFooter>
-                          <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
+                          <p>{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative()}</p>
+                          <p>{video.statistics?.viewCount}</p>
                         </CardFooter>
                       }
                     </Card>
@@ -133,7 +134,8 @@ export default async function IndexPage() {
 
                       {video.snippet?.publishedAt &&
                         <CardFooter>
-                          <p className="">{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative({ unit: "hours" })}</p>
+                          <p>{DateTime.fromISO(video.snippet?.publishedAt as string).toRelative()}</p>
+                          <p>{video.statistics?.viewCount}</p>
                         </CardFooter>
                       }
                     </Card>

@@ -48,31 +48,35 @@ export default async function WatchPage({ params }: { params: { videoId: string 
   const { stats: data } = await getVideoStats(videoId);
 
   return <main className="container grid items-center gap-6 pb-8 pt-6 md:py-10" >
-    <Stats data={data} />
-    <div className="flex flex-row">
-      {noSubtitles && <Alert>
+
+    <div className="flex flex-row justify-center">
+      {noSubtitles ? <Alert>
         <AlertTitle>No se ha procesado esta sesion todavia</AlertTitle>
         <AlertDescription>
           <p>Procesa la sesion para poder ver los subtitulos</p>
           {/* @ts-ignore */}
           <Button formAction={handleTranscribe} className="text-blue-500 hover:underline">Procesar</Button>
         </AlertDescription>
-      </Alert>}
-      <Player options={{
-        controls: true,
-        tracks: [{
-          kind: 'captions',
-          label: 'español',
-          src: `${getBaseUrl()}/api/watch/${videoId}/captions`,
-          default: true,
-        }],
-        sources: [{
-          src: `https://www.youtube.com/embed/${videoId}`,
-          type: 'video/youtube'
-        }],
-        width: '720px',
-      }} />
-      <Commments />
+      </Alert> : <div className="flex flex-col">
+        <div className="flex flex-row">
+          <Player options={{
+            controls: true,
+            tracks: [{
+              kind: 'captions',
+              label: 'español',
+              src: `${getBaseUrl()}/api/watch/${videoId}/captions`,
+              default: true,
+            }],
+            sources: [{
+              src: `https://www.youtube.com/embed/${videoId}`,
+              type: 'video/youtube'
+            }],
+            width: '720px',
+          }} />
+          <Commments />
+        </div>
+        <Stats data={data} />
+      </div>}
     </div>
   </main>
 }

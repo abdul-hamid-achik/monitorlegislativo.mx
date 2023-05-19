@@ -40,6 +40,10 @@ async function main(videoId: string, outputPath?: string | null): Promise<void> 
 
 let [videoId, outputPath] = process.argv.slice(2);
 
-if (outputPath) console.log(`📂 Output path: ${outputPath}`)
+if (!outputPath) {
+  outputPath = `.tmp/${videoId}`
+}
+
+console.log(`📂 Output path: ${outputPath}`)
 main(videoId, outputPath)
 

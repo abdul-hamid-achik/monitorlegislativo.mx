@@ -7,6 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getBaseUrl() {
   return process.env.NODE_ENV === "production"
-    ? process.env.VERCEL_URL || "https://monitorlegislativo.mx"
+    ? "https://monitorlegislativo.mx"
     : "http://localhost:3000"
 }

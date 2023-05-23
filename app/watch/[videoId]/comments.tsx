@@ -14,7 +14,6 @@ export default function Commments() {
     setResponse("");
     setLoading(true);
 
-    console.log(params?.videoId)
     try {
       const res = await fetch(`/api/watch/${params?.videoId}/comments`, {
         method: "POST",
@@ -37,8 +36,6 @@ export default function Commments() {
         return;
       }
 
-      console.log(data)
-
       const reader = data.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -50,7 +47,6 @@ export default function Commments() {
         setResponse((prev) => prev + chunkValue);
       }
 
-      console.log(res)
       reader.cancel();
 
     } catch (exception) {

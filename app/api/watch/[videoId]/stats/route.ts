@@ -1,15 +1,21 @@
-import { NextResponse } from 'next/server';
-import superjson from 'superjson';
-
 import { prisma } from '@/lib/prisma';
 import { kv } from '@vercel/kv';
+import nlp from 'compromise';
 import { DateTime } from 'luxon';
+import { NextResponse } from 'next/server';
+import Sentiment from 'sentiment';
+import superjson from 'superjson';
+// @ts-ignore
+import Spanish from 'sentiment-spanish';
+
+// Initialize sentiment
+var sentiment = new Sentiment(Spanish);
 
 export async function GET(request: Request, { params }: { params: { videoId: string } }) {
-  const cacheKey = `video-stats-${params?.videoId}`
+  const cacheKey = `video-${params?.videoId}-stats`
   const cachedVideoData = await kv.get(cacheKey)
 
-  if (cachedVideoData) {
+  if (cachedVideoData && process.env.NODE_ENV !== 'development') {
     return NextResponse.json({
       stats: cachedVideoData,
     })
@@ -24,50 +30,41 @@ export async function GET(request: Request, { params }: { params: { videoId: str
     },
   });
 
-  const wordCounts: { [key: string]: number } = {};
-  const totalWordsOverTime = [];
-  const uniqueWordsOverTime = [];
+  const sentimentOverTime = [];
+  const verbsOverTime = [];
+  const adjectivesOverTime = [];
+  const entitiesOverTime = [];
+  const topicsOverTime = [];
 
   for (const segment of segments) {
-    const words = segment.content.toLowerCase().split(/\s+/);
-    const uniqueWordsInSegment = new Set();
-
-    for (const word of words) {
-      if (wordCounts[word]) {
-        wordCounts[word]++;
-      } else {
-        wordCounts[word] = 1;
-      }
-      uniqueWordsInSegment.add(word);
-    }
-
     const startAt = DateTime.fromISO(segment.startAt).toFormat('yyyy-LL-dd HH:mm');
 
-    totalWordsOverTime.push({ time: startAt, count: words.length });
-    uniqueWordsOverTime.push({ time: startAt, count: uniqueWordsInSegment.size });
+    // Sentiment analysis
+    const result = sentiment.analyze(segment.content);
+    sentimentOverTime.push({ time: startAt, score: result.score });
+
+    // Verbs and adjectives extraction
+    const doc = nlp(segment.content);
+    const verbs = doc.verbs().out('text');
+    const adjectives = doc.adjectives().out('text');
+    verbsOverTime.push({ time: startAt, verbs });
+    adjectivesOverTime.push({ time: startAt, adjectives });
+
+    // Named entities (topics)
+    const entities = doc.people().concat(doc.places()).concat(doc.organizations()).map(entity => entity.out('text'));
+    entitiesOverTime.push({ time: startAt, entities });
+
+    // Key phrases (topics)
+    const topics = doc.topics().out('text');
+    topicsOverTime.push({ time: startAt, topics });
   }
 
-  const top10Words = Object.entries(wordCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([word, count]) => ({ word, count }));
-
-  const wordFrequencyOverTime = top10Words.map(({ word }) => {
-    const frequencyOverTime = [];
-    for (const segment of segments) {
-      const words = segment.content.toLowerCase().split(/\s+/);
-      const wordCount = words.filter(w => w === word).length;
-      const startAt = DateTime.fromISO(segment.startAt).toFormat('yyyy-LL-dd HH:mm');
-      frequencyOverTime.push({ time: startAt, count: wordCount });
-    }
-    return { word, frequencyOverTime };
-  });
-
   const stats = {
-    wordFrequencyOverTime: superjson.serialize(wordFrequencyOverTime).json,
-    top10Words: superjson.serialize(top10Words).json,
-    totalWordsOverTime: superjson.serialize(totalWordsOverTime).json,
-    uniqueWordsOverTime: superjson.serialize(uniqueWordsOverTime).json,
+    sentimentOverTime: superjson.serialize(sentimentOverTime).json,
+    verbsOverTime: superjson.serialize(verbsOverTime).json,
+    adjectivesOverTime: superjson.serialize(adjectivesOverTime).json,
+    entitiesOverTime: superjson.serialize(entitiesOverTime).json,
+    topicsOverTime: superjson.serialize(topicsOverTime).json,
   }
 
   await kv.set(cacheKey, superjson.stringify(stats), {

@@ -7,9 +7,10 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 
 const QA_PROMPT = `
-  You are a helpful mexican political analyst that reads the transcripts of the sessions and answers questions about them.
-  you have an excellent mexican spanish, you can be sarcastic and slightly funny but serious and trustworthy nonetheless.
-  You will first consider the user question in order to formulate your response.
+  Eres un perspicaz analista político mexicano que lee las transcripciones de las sesiones legislativas y responde preguntas sobre ellas.
+  Tienes un excelente español mexicano, puedes ser sarcástico y un poco divertido, pero siempre serio y de confianza.
+  Para formular tu respuesta, primero considerarás la pregunta del usuario y el contexto proporcionado por las transcripciones de los videos de las sesiones legislativas.
+  Tienes un amplio conocimiento de los procedimientos legislativos y de los videos porque has leído las transcripciones.
 `
 
 export async function POST(request: Request, { params: { videoId } }: { params: { videoId: string } }) {
@@ -18,21 +19,16 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
   }
   const { writable, readable } = new TransformStream();
 
-  const subtitles = await db.subtitle.findMany({
-    where: {
-      videoId,
-    },
-  });
-
-
   const writer = writable.getWriter()
   const encoder = new TextEncoder();
+  const embeddings = new OpenAIEmbeddings({
+    modelName: "text-embedding-ada-002"
+  })
+
 
 
   const subtitlesVector = PrismaVectorStore.withModel<Subtitle>(db).create(
-    new OpenAIEmbeddings({
-      modelName: "text-embedding-ada-002"
-    }), {
+    embeddings, {
     prisma: Prisma,
     tableName: "subtitles" as "Subtitle",
     vectorColumnName: "vector",
@@ -41,6 +37,7 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
       content: PrismaVectorStore.ContentColumn,
     },
   })
+
 
   const politicsVector = PrismaVectorStore.withModel<Politician>(db).create(
     new OpenAIEmbeddings({
@@ -72,10 +69,6 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
     }
   })
 
-  const vectors = [
-    subtitlesVector.asRetriever(),
-    politicsVector.asRetriever(),
-  ]
 
   const model = new ChatOpenAI({
     modelName: "gpt-4",
@@ -83,7 +76,9 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
     callbacks
   })
 
-  const chain = ConversationalRetrievalQAChain.fromLLM(model, subtitlesVector.asRetriever(), {
+  const chain = ConversationalRetrievalQAChain.fromLLM(model, subtitlesVector.asRetriever(undefined, {
+    videoId: videoId,
+  }), {
     returnSourceDocuments: true,
     verbose: true,
   })
@@ -91,9 +86,10 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
 
   chain.call({
     question,
+    prompt: QA_PROMPT,
     chat_history: [],
   }).then(response => {
-    console.log(response.text)
+    console.log(response.sourceDocuments)
   }).catch(error => {
     console.error(error)
   });

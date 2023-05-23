@@ -6,7 +6,7 @@ import { kv } from '@vercel/kv';
 import { DateTime } from 'luxon';
 
 export async function GET(request: Request, { params }: { params: { videoId: string } }) {
-  const cacheKey = `video-stats-${params.videoId}`
+  const cacheKey = `video-stats-${params?.videoId}`
   const cachedVideoData = await kv.get(cacheKey)
 
   if (cachedVideoData) {
@@ -70,7 +70,7 @@ export async function GET(request: Request, { params }: { params: { videoId: str
     uniqueWordsOverTime: superjson.serialize(uniqueWordsOverTime).json,
   }
 
-  await kv.set(cacheKey, JSON.stringify(stats), {
+  await kv.set(cacheKey, superjson.stringify(stats), {
     ex: 60 * 60 * 1000 * 1,
     nx: true,
   });

@@ -8,13 +8,16 @@ import Commments from './comments';
 import Stats from './stats';
 
 async function getVideoStats(videoId: string) {
-  const response = await fetch(`${getBaseUrl()}/api/watch/${videoId}/stats`, {
-    headers: {
-      'Content-Type': 'application/json',
-    }
-  })
-
-  return await response.json() as { [key: string]: any }
+  try {
+    const response = await fetch(`${getBaseUrl()}/api/watch/${videoId}/stats`, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    return await response.json() as { [key: string]: any }
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 

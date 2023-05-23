@@ -15,8 +15,12 @@ async function getVideoStats(videoId: string) {
       }
     })
     return await response.json() as { [key: string]: any }
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    return {
+      error: error.message,
+      stats: {}
+    }
   }
 }
 

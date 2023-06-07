@@ -57,19 +57,16 @@ export default function Commments() {
 
   return <div className="container grid items-center gap-6 px-8 pb-8 pt-6 md:py-10" >
     <h4 className="lg:text-1xl scroll-m-20 text-sm font-extrabold tracking-tight">
-      Preguntas?
+      Platica con el video y hazle preguntas
     </h4>
-    <p>
-      puedes hacer preguntas sobre lo que se discutio en el video o sobre quien lo discutio
-    </p>
-    <Textarea className="h-32 w-full"
-      value={input}
-      onChange={(e) => setInput(e.target.value)} />
     {response && (
-      <div className="mt-8 rounded-xl border p-4 shadow-md transition hover:bg-gray-700">
+      <div className="mt-8 max-w-prose rounded-xl border p-4 shadow-md transition hover:bg-gray-700">
         {response}
       </div>
     )}
+    <Textarea className="h-32 w-full"
+      value={input}
+      onChange={(e) => setInput(e.target.value)} />
     {!loading ? (
       <button
         className="w-full rounded-xl bg-neutral-900 px-4 py-2 font-medium text-white hover:bg-black/80"

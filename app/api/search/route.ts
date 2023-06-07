@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { youtube } from "@/lib/youtube";
 import { kv } from "@vercel/kv";
 import superjson from "superjson";
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';

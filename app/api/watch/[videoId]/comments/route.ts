@@ -1,17 +1,24 @@
 import { prisma as db } from "@/lib/prisma";
-import { Politician, Prisma, Subtitle } from "@prisma/client";
+import { Prisma, Subtitle } from "@prisma/client";
 import { CallbackManager } from "langchain/callbacks";
 import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { PromptTemplate } from 'langchain/prompts';
 import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 
-const QA_PROMPT = `
-  Eres un perspicaz analista político mexicano que lee las transcripciones de las sesiones legislativas y responde preguntas sobre ellas.
-  Tienes un excelente español mexicano, puedes ser sarcástico y un poco divertido, pero siempre serio y de confianza.
-  Para formular tu respuesta, primero considerarás la pregunta del usuario y el contexto proporcionado por las transcripciones de los videos de las sesiones legislativas.
-  Tienes un amplio conocimiento de los procedimientos legislativos y de los videos porque has leído las transcripciones.
-`
+const QA_PROMPT = PromptTemplate.fromTemplate(
+  `Eres un perspicaz analista político mexicano con las siguientes partes extraídas de una larga transcripción de vídeo de sesiones legislativas y una pregunta. Proporciona una respuesta conversacional basada en el contexto proporcionado.
+Debes utilizar únicamente hipervínculos como referencias que estén explícitamente listados como fuente en el contexto a continuación. NO inventes un hipervínculo que no esté listado.
+Si no puedes encontrar la respuesta en el contexto a continuación, simplemente di "Hmm, no estoy seguro". No trates de inventar una respuesta.
+Si la pregunta no está relacionada con este texto, o el contexto proporcionado, informa cortésmente que estás sintonizado para responder solo preguntas que estén relacionadas con este video.
+Elige el enlace más relevante que coincida con el contexto proporcionado. Si no hay enlaces relevantes, simplemente di "Hmm, no estoy seguro".
+Cuando hables del Texto refierete a este como Video y esto es muy importante
+Pregunta: {question}
+=========
+{context}
+=========
+`);
 
 export async function POST(request: Request, { params: { videoId } }: { params: { videoId: string } }) {
   const { question } = await request.json() as {
@@ -25,8 +32,6 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
     modelName: "text-embedding-ada-002"
   })
 
-
-
   const subtitlesVector = PrismaVectorStore.withModel<Subtitle>(db).create(
     embeddings, {
     prisma: Prisma,
@@ -35,22 +40,18 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
     columns: {
       id: PrismaVectorStore.IdColumn,
       content: PrismaVectorStore.ContentColumn,
+      video_id: PrismaVectorStore.ContentColumn,
+      start_at: PrismaVectorStore.ContentColumn,
+      end_at: PrismaVectorStore.ContentColumn,
     },
+    filter: {
+      video_id: {
+        equals: videoId
+      }
+    } as any
   })
 
 
-  const politicsVector = PrismaVectorStore.withModel<Politician>(db).create(
-    new OpenAIEmbeddings({
-      modelName: "text-embedding-ada-002"
-    }), {
-    prisma: Prisma,
-    tableName: "politicians" as "Politician",
-    vectorColumnName: "vector",
-    columns: {
-      id: PrismaVectorStore.IdColumn,
-      content: PrismaVectorStore.ContentColumn,
-    },
-  })
 
   const callbacks = CallbackManager.fromHandlers({
     handleLLMNewToken: async (token) => {
@@ -70,30 +71,27 @@ export async function POST(request: Request, { params: { videoId } }: { params: 
   })
 
 
-  const model = new ChatOpenAI({
+  const llm = new ChatOpenAI({
     modelName: "gpt-4",
     streaming: true,
+    temperature: 0.2,
     callbacks
   })
 
-  const chain = ConversationalRetrievalQAChain.fromLLM(model, subtitlesVector.asRetriever(undefined, {
-    videoId: videoId,
-  }), {
+
+
+  const subtitlesRetrivalChain = ConversationalRetrievalQAChain.fromLLM(llm, subtitlesVector.asRetriever(), {
     returnSourceDocuments: true,
     verbose: true,
+    qaChainOptions: {
+      type: "stuff",
+    },
+    qaTemplate: QA_PROMPT.template
   })
-
-
-  chain.call({
+  subtitlesRetrivalChain.call({
     question,
-    prompt: QA_PROMPT,
     chat_history: [],
-  }).then(response => {
-    console.log(response.sourceDocuments)
-  }).catch(error => {
-    console.error(error)
-  });
-
+  }).catch(console.error)
   return new Response(readable, {
     headers: {
       "Content-Type": "text/event-stream",

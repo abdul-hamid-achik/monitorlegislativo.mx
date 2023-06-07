@@ -87,6 +87,7 @@ export default async function WatchPage({ params }: { params: { videoId: string 
                 type: 'video/youtube'
               }],
               width: '720px',
+              className: 'video-js vjs-big-play-centered',
             }} />
           }
           <Commments />
